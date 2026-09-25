@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Card Print Studio - Dual Sided, PDF Auto-Detect & Self-Cut</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">RK</div>
+        <div>
+          <h1> Smart Card</h1><span> Print Studio</span>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-btn active" data-section="upload">📤 Upload PDF / Images</button>
+        <button class="nav-btn" data-section="size">📏 Card Size & Quality</button>
+        <button class="nav-btn" data-section="layout">▦ Layout & Self-Cut</button>
+      </nav>
+      <div class="side-note">
+        <b>100% Local & Private</b>
+        <p>All card processing, PDF rendering, deskewing, and printing happens locally in your browser. No files are
+          uploaded to any server.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">SMART CARD PRINTING </p>
+          <h2>Dual Sided Smart Card Studio</h2>
+        </div>
+        <div class="status"><span></span> High-Resolution 300 DPI Active</div>
+      </header>
+
+      <!-- 1. UPLOAD SECTION (DUAL FILE / PDF UPLOAD) -->
+      <section class="panel" id="uploadSection">
+        <div class="panel-head">
+          <div>
+            <h3>1. Upload PDF or Images (Front & Back)</h3>
+            <p>Upload an official PDF (e-Aadhaar, e-PAN, Ayushman, Voter ID) or images to automatically extract and
+              arrange both sides.</p>
+          </div>
+          <div class="card-type-wrap">
+            <label class="field-label">Document Preset</label>
+            <select id="cardType">
+              <option value="aadhaar">Aadhaar Card (85.6 × 53.98 mm)</option>
+              <option value="pan">PAN Card (85.6 × 53.98 mm)</option>
+              <option value="ration card">RationCard (85.6 × 53.98 mm)</option>
+              <option value="ayushman">Ayushman Card (85.6 × 53.98 mm)</option>
+              <option value="voter">Voter ID (85.6 × 53.98 mm)</option>
+              <option value="dl">Driving Licence (85.6 × 53.98 mm)</option>
+              <option value="custom">Custom Size</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FAST PDF / DUAL UPLOAD BANNER -->
+        <div class="quick-upload-bar">
+          <div class="quick-upload-text">
+            <span>⚡ <b>Instant PDF Detection:</b> Upload e-Aadhaar or e-PAN PDF to auto-detect both sides:</span>
+          </div>
+          <div class="quick-upload-btns">
+            <button class="primary" id="uploadPdfBtn">📄 Upload PDF (e-Aadhaar / e-PAN / e-Card)</button>
+            <input type="file" id="pdfFileInput" accept="application/pdf" hidden>
+            <button class="secondary" id="chooseBothBtn">📁 Upload 2 Images (Front & Back)</button>
+            <input type="file" id="bothFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" multiple
+              hidden>
+            <button class="secondary" id="resetAllBtn">Reset All</button>
+          </div>
+        </div>
+
+        <!-- PDF AUTO-DETECTED BANNER (SHOWN WHEN A PDF IS LOADED) -->
+        <div id="pdfDetectedBanner" class="pdf-detected-bar" style="display:none;">
+          <div class="pdf-info">
+            <span class="pdf-tag">PDF EXTRACTED</span>
+            <span id="pdfDetectedText">e-Aadhaar card detected & split into Front and Back at 300 DPI!</span>
+          </div>
+          <div class="pdf-controls">
+            <label>Card Split:</label>
+            <select id="pdfSplitMode">
+              <option value="horizontal" selected>Side-by-Side (Left = Front, Right = Back)</option>
+              <option value="vertical">Stacked (Top = Front, Bottom = Back)</option>
+              <option value="pages">2 Pages (Page 1 = Front, Page 2 = Back)</option>
+            </select>
+            <button class="secondary btn-sm" id="swapFrontBackBtn" title="Swap Front & Back sides">⇄ Swap Sides</button>
+          </div>
+        </div>
+
+        <!-- TWO FILE UPLOAD CARDS -->
+        <div class="dual-upload-grid" style="margin-top: 18px;">
+          <!-- FRONT SIDE BOX -->
+          <div class="card-side-box" id="frontBox">
+            <div class="side-box-head">
+              <span class="side-badge front-badge">FRONT SIDE</span>
+              <span class="side-status" id="frontStatus">Waiting for Front image</span>
+            </div>
+
+            <div class="dropzone" id="frontDropzone">
+              <div class="upload-icon">🪪</div>
+              <h4>Drop Front Image / PDF Here</h4>
+              <p>JPG, PNG, WEBP or PDF</p>
+              <button class="primary" id="chooseFrontBtn">Choose Front File</button>
+              <input type="file" id="frontFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+            </div>
+
+            <div class="side-preview-wrap" id="frontPreviewWrap" style="display:none;">
+              <canvas id="frontCanvas"></canvas>
+              <div class="side-actions">
+                <button class="secondary btn-sm" id="rotateFrontBtn" title="Rotate 90° Clockwise">⟳ Rotate 90°</button>
+                <button class="secondary btn-sm" id="detectFrontBtn" title="Auto Deskew Card">Auto Deskew</button>
+                <button class="secondary btn-sm btn-danger" id="removeFrontBtn" title="Remove Image">✕ Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BACK SIDE BOX -->
+          <div class="card-side-box" id="backBox">
+            <div class="side-box-head">
+              <span class="side-badge back-badge">BACK SIDE</span>
+              <span class="side-status" id="backStatus">Waiting for Back image</span>
+            </div>
+
+            <div class="dropzone" id="backDropzone">
+              <div class="upload-icon">🔄</div>
+              <h4>Drop Back Image / PDF Here</h4>
+              <p>JPG, PNG, WEBP or PDF</p>
+              <button class="primary" id="chooseBackBtn">Choose Back File</button>
+              <input type="file" id="backFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+            </div>
+
+            <div class="side-preview-wrap" id="backPreviewWrap" style="display:none;">
+              <canvas id="backCanvas"></canvas>
+              <div class="side-actions">
+                <button class="secondary btn-sm" id="rotateBackBtn" title="Rotate 90° Clockwise">⟳ Rotate 90°</button>
+                <button class="secondary btn-sm" id="detectBackBtn" title="Auto Deskew Card">Auto Deskew</button>
+                <button class="secondary btn-sm btn-danger" id="removeBackBtn" title="Remove Image">✕ Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CARD SIZE & QUALITY -->
+      <section class="panel" id="sizeSection">
+        <div class="panel-head">
+          <div>
+            <h3>2. Physical Card Size & Quality</h3>
+            <p>Set physical millimeters, 300/600 DPI print quality, and image clarity.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>Card Width (mm)</label>
+            <input id="widthMm" type="number" step="0.01" min="1" value="85.60">
+          </div>
+          <div>
+            <label>Card Height (mm)</label>
+            <input id="heightMm" type="number" step="0.01" min="1" value="53.98">
+          </div>
+          <div>
+            <label>Print Resolution (DPI)</label>
+            <select id="dpi">
+              <option value="150">150 DPI (Fast Draft)</option>
+              <option value="300" selected>300 DPI (High Quality - Print Standard)</option>
+              <option value="600">600 DPI (Ultra Fine / HD)</option>
+            </select>
+          </div>
+          <div>
+            <label>Pairs to Print (Copies)</label>
+            <input id="copies" type="number" min="1" max="10" value="2">
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 14px;">
+          <div>
+            <label>Image Fit Mode</label>
+            <select id="fitMode">
+              <option value="cover" selected>Fit & Fill (Proportional - No Distortion)</option>
+              <option value="contain">Fit Entire Image (Show All)</option>
+              <option value="stretch">Stretch to Exact Dimensions</option>
+            </select>
+          </div>
+          <div>
+            <label>Brightness</label>
+            <input id="brightness" type="range" min="-50" max="50" value="0">
+            <div class="slider-labels">
+              <span>Darker</span><span id="brightnessVal" class="val-tag">0%</span><span>Brighter</span>
+            </div>
+          </div>
+          <div>
+            <label>Contrast</label>
+            <input id="contrast" type="range" min="-50" max="50" value="0">
+            <div class="slider-labels">
+              <span>Lower</span><span id="contrastVal" class="val-tag">0%</span><span>Higher</span>
+            </div>
+          </div>
+          <div>
+            <label>Card Corner Guides</label>
+            <select id="roundGuide">
+              <option value="yes" selected>Show CR80 3.18mm Corner Radius</option>
+              <option value="no">Sharp 90° Corners</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div><span>Single Card Size: </span><strong id="pixelSize">1011 × 638 px (300 DPI)</strong></div>
+          <div><span>Folded Card Total: </span><strong id="pairSize">171.20 × 53.98 mm</strong></div>
+          <div><span>Page Canvas: </span><strong id="pageSizePx">2480 × 3508 px</strong></div>
+        </div>
+      </section>
+
+      <!-- 3. LAYOUT & SELF-CUT MARKS -->
+      <section class="panel" id="layoutSection">
+        <div class="panel-head">
+          <div>
+            <h3>3. A4 Layout & Self-Cut Guides</h3>
+            <p>Arrange Front & Back on the sheet with precision cutting marks and fold lines.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>Paper Size</label>
+            <select id="pageSize">
+              <option value="a4" selected>A4 (210 × 297 mm)</option>
+              <option value="letter">Letter (216 × 279 mm)</option>
+            </select>
+          </div>
+          <div>
+            <label>Orientation</label>
+            <select id="orientation">
+              <option value="portrait" selected>Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+          <div>
+            <label>Card Arrangement</label>
+            <select id="layoutArrangement">
+              <option value="fold_horizontal" selected>Foldable Side-by-Side (Self-Cut & Fold)</option>
+              <option value="fold_vertical">Foldable Top-to-Bottom (Vertical Fold)</option>
+              <option value="separate">Separate Cards (Individual Front & Back)</option>
+              <option value="grid">Sequential Grid (Front, Back, Front...)</option>
+            </select>
+          </div>
+          <div>
+            <label>Self-Cut Trim Guides</label>
+            <select id="cutGuide">
+              <option value="crop_marks" selected>Corner Crop Marks (Precision Trim Marks)</option>
+              <option value="both">Crop Marks + Subtle Outline</option>
+              <option value="dashed">Dashed Cut Border (Scissors)</option>
+              <option value="solid">Subtle Solid Outline (0.15 mm)</option>
+              <option value="none">None (No Border)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 14px;">
+          <div>
+            <label>Center Fold Guide</label>
+            <select id="foldGuide">
+              <option value="yes" selected>Show Center Fold Line (Dashed + Ticks)</option>
+              <option value="ticks_only">Tick Marks Only (Outside Card)</option>
+              <option value="no">No Fold Line</option>
+            </select>
+          </div>
+          <div>
+            <label>Gap Between Pairs (mm)</label>
+            <input id="gapMm" type="number" min="0" step="0.5" value="6">
+          </div>
+          <div>
+            <label>Page Top/Bottom Margin (mm)</label>
+            <input id="marginMm" type="number" min="0" step="0.5" value="12">
+          </div>
+          <div>
+            <label>Print Sizing Note</label>
+            <div class="note-pill">100% Actual Size / No Scale</div>
+          </div>
+        </div>
+
+        <!-- ACTION TOOLBAR -->
+        <div class="layout-toolbar">
+          <button class="primary" id="generateBtn">🔄 Refresh A4 Preview</button>
+          <button class="secondary" id="pdfBtn">📄 Download High-Res PDF (300 DPI)</button>
+          <button class="secondary" id="pngBtn">🖼️ Download High-Res PNG</button>
+          <button class="secondary" id="printBtn">🖨️ Print Directly</button>
+        </div>
+
+        <!-- A4 CANVAS STAGE -->
+        <div class="a4-stage">
+          <canvas id="a4Canvas"></canvas>
+        </div>
+        <p class="tip">✂ <b>Self-Cut Tip:</b> When printing, choose <b>"Actual Size"</b> or <b>"100%"</b> scale in the
+          print dialog. With "Foldable Side-by-Side", cut along the outer crop marks, fold along the center guide line,
+          and laminate your double-sided smart card!</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- PASSWORD MODAL FOR ENCRYPTED PDFS -->
+  <div id="pdfPasswordModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>🔒 PDF is Password Protected</h4>
+        <button class="modal-close" id="cancelPdfPasswordBtn">✕</button>
+      </div>
+      <p>This PDF document is encrypted. Please enter the password to unlock it:</p>
+      <div class="pwd-tip">
+        💡 <b>Tip for e-Aadhaar:</b> The password is the first 4 letters of your Name in CAPITAL letters + your 4-digit
+        Year of Birth.<br>
+        <i>Example: If your name is RAJESH KUMAR and year of birth is 1990, the password is <b>RAJE1990</b>.</i>
+      </div>
+      <div class="pwd-input-wrap">
+        <input type="password" id="pdfPasswordInput" placeholder="e.g. RAJE1990" autocomplete="off">
+        <button class="primary" id="submitPdfPasswordBtn">Unlock & Detect</button>
+      </div>
+      <div id="pdfPasswordError" class="pwd-error" style="display:none;">Incorrect password. Please try again.</div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+
+</html>

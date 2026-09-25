@@ -1,0 +1,17 @@
+{
+  "name": "smart-card-print",
+  "version": "1.0.0",
+  "description": "High-Definition Smart Card Printing, PDF Auto-Detect & Self-Cut Studio",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "smart-card",
+    "aadhaar",
+    "pan-card",
+    "pdf",
+    "print"
+  ],
+  "author": "RK",
+  "license": "MIT"
+}
