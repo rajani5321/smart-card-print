@@ -17,7 +17,7 @@
 
   {
   "scripts": {
-    "build": "[my-framework] build --output public"
+    "build": "[next] build --output public"
   }
 }
 }
