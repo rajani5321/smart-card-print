@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "High-Definition Smart Card Printing, PDF Auto-Detect & Self-Cut Studio",
   "scripts": {
-    "start": "npx serve ."
+    "start": "npx serve .",
+    "build": "esbuild js/speed-insights.js --bundle --outfile=js/speed-insights.bundle.js --format=iife",
+    "prebuild": "npm install"
   },
   "keywords": [
     "smart-card",
@@ -13,5 +15,11 @@
     "print"
   ],
   "author": "RK",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
 }
