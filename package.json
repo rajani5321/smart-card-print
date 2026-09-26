@@ -15,10 +15,5 @@
   "author": "RK",
   "license": "MIT"
 
-  {
-  "scripts": {
-    "build": "[next] build --output public"
-  }
-}
 }
 
