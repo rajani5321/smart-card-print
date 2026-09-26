@@ -13,12 +13,8 @@
     "print"
   ],
   "author": "RK",
-  "license": "MIT"
-
-  {
-  "scripts": {
-    "build": "[my-framework] build --output public"
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
   }
 }
-}
-
